@@ -1,0 +1,10 @@
+{
+  "id": "csv-tsv-viewer",
+  "name": "CSV TSV Viewer",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "Open .csv and .tsv files as a read-only table with search, source view, and parse warnings.",
+  "author": "Viggo Meesters",
+  "authorUrl": "https://github.com/viggomeesters",
+  "isDesktopOnly": false
+}
