@@ -191,6 +191,7 @@ class CsvTsvViewerView extends TextFileView {
 function delimiterLabel(delimiter: string): string {
   if (delimiter === "\t") return "tab";
   if (delimiter === ";") return "semicolon";
+  if (delimiter === "|") return "pipe";
   return "comma";
 }
 

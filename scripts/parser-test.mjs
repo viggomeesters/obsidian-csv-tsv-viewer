@@ -51,5 +51,10 @@ assert.equal(large.renderedRows.length, 10000);
 assert.equal(large.skippedRows, 6);
 assert.ok(large.warnings.some((warning) => warning.label === "Render cap"));
 
+const pipe = parseTable('# export metadata\ndate|duration|apps\n2026-01-01|1|one;two;three;four\n2026-01-02|2|one;two\n', 'csv');
+assert.equal(pipe.delimiter, '|', 'consistent pipes must beat semicolons embedded in cells');
+assert.equal(pipe.rows[2][2], 'one;two;three;four');
+assert.equal(pipe.rows[0][0], '# export metadata', 'hash-prefixed values must not be silently discarded');
+
 fs.rmSync(new URL("../.tmp-parser-test.mjs", import.meta.url));
 console.log("CSV TSV parser fixture tests passed.");

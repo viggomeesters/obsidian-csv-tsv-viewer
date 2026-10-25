@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1 - 2026-10-25
+
+- Detect pipe-delimited CSV using consistent row widths while preserving hash-prefixed data.
+- Cross-platform production build.
+- Current Community installation documentation.
+
+
 All notable changes to CSV TSV Viewer are documented here.
 
 ## 0.1.0 - 2026-06-07
