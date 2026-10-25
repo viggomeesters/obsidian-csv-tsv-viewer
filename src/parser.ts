@@ -2,7 +2,7 @@ import Papa from "papaparse";
 
 const RENDER_ROW_LIMIT = 10000;
 
-export type DelimiterKind = "comma" | "semicolon" | "tab";
+export type DelimiterKind = "comma" | "semicolon" | "tab" | "pipe";
 
 export interface WarningItem {
   label: string;
@@ -59,9 +59,9 @@ function delimiterFor(data: string, extension: string): string {
   const sample = firstNonEmptyLines(data, 20).join("\n");
   if (!sample) return ",";
 
-  const commaScore = delimiterScore(sample, ",");
-  const semicolonScore = delimiterScore(sample, ";");
-  return semicolonScore > commaScore ? ";" : ",";
+  return [",", ";", "|"].reduce((best, delimiter) =>
+    delimiterScore(sample, delimiter) > delimiterScore(sample, best) ? delimiter : best,
+  );
 }
 
 function delimiterScore(sample: string, delimiter: string): number {
@@ -76,10 +76,15 @@ function delimiterScore(sample: string, delimiter: string): number {
   if (rows.length === 0) return 0;
 
   const widths = rows.map((row) => row.length);
-  const max = Math.max(...widths);
-  const multiColumnRows = widths.filter((width) => width > 1).length;
-  const consistency = widths.filter((width) => width === max).length;
-  return max * 5 + multiColumnRows * 3 + consistency - result.errors.length * 4;
+  const frequencies = new Map<number, number>();
+  for (const width of widths) {
+    if (width > 1) frequencies.set(width, (frequencies.get(width) ?? 0) + 1);
+  }
+  let score = 0;
+  for (const [width, count] of frequencies) {
+    score = Math.max(score, (count / rows.length) * 100 + count * 3 + Math.min(width, 20));
+  }
+  return score - result.errors.length * 4;
 }
 
 function warningsFor(
@@ -128,7 +133,9 @@ function normalizeRows(data: unknown[]): string[][] {
 
 function formatCell(cell: unknown): string {
   if (cell === null || cell === undefined) return "";
-  return String(cell);
+  if (typeof cell === "string") return cell;
+  if (typeof cell === "number" || typeof cell === "boolean" || typeof cell === "bigint") return String(cell);
+  return JSON.stringify(cell) ?? "";
 }
 
 function maxColumnCount(rows: string[][]): number {
@@ -148,5 +155,6 @@ function firstNonEmptyLines(data: string, limit: number): string[] {
 function delimiterKind(delimiter: string): DelimiterKind {
   if (delimiter === "\t") return "tab";
   if (delimiter === ";") return "semicolon";
+  if (delimiter === "|") return "pipe";
   return "comma";
 }
