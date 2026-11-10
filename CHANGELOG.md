@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0 - 2026-11-10
+
+- Add optional first-row column headers.
+- Add an option to ignore hash comments in the table and delimiter detection. Source retains the original text.
+
 ## 0.1.1 - 2026-10-25
 
 - Detect pipe-delimited CSV using consistent row widths while preserving hash-prefixed data.

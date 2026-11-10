@@ -56,5 +56,23 @@ assert.equal(pipe.delimiter, '|', 'consistent pipes must beat semicolons embedde
 assert.equal(pipe.rows[2][2], 'one;two;three;four');
 assert.equal(pipe.rows[0][0], '# export metadata', 'hash-prefixed values must not be silently discarded');
 
+const exportText = "# report; one; two\r\n".repeat(25)
+  + 'date|detail|apps\r\n2026-01-01|"line 1\r\n# quoted content"|one;two;three\r\n'
+  + '# trailing comment\r\n2026-01-02|other|one;two\r\n';
+const commented = parseTable(exportText, "csv", true);
+assert.equal(commented.delimiterKind, "pipe");
+assert.deepEqual(commented.rows, [
+  ["date", "detail", "apps"],
+  ["2026-01-01", "line 1\r\n# quoted content", "one;two;three"],
+  ["2026-01-02", "other", "one;two"],
+]);
+assert.deepEqual(commented.warnings, []);
+assert.deepEqual(parseTable('# note\n"#literal"\tvalue\n', "tsv", true).rows, [["#literal", "value"]]);
+for (const ignoreComments of [false, true]) {
+  const leadingBlankRows = parseTable(" \n\n".repeat(25) + "a|b\nc|d\n", "csv", ignoreComments);
+  assert.equal(leadingBlankRows.delimiterKind, "pipe");
+  assert.deepEqual(leadingBlankRows.rows, [["a", "b"], ["c", "d"]]);
+}
+
 fs.rmSync(new URL("../.tmp-parser-test.mjs", import.meta.url));
 console.log("CSV TSV parser fixture tests passed.");

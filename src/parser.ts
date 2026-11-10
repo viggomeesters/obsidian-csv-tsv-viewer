@@ -20,10 +20,12 @@ export interface ParsedTable {
   warnings: WarningItem[];
 }
 
-export function parseTable(data: string, extension: string): ParsedTable {
-  const delimiter = delimiterFor(data, extension);
+export function parseTable(data: string, extension: string, ignoreComments = false): ParsedTable {
+  const comments = ignoreComments ? "#" : false;
+  const delimiter = delimiterFor(data, extension, comments);
   const result = Papa.parse<string[]>(data, {
     delimiter,
+    comments,
     dynamicTyping: false,
     header: false,
     skipEmptyLines: "greedy",
@@ -54,37 +56,42 @@ export function parseTable(data: string, extension: string): ParsedTable {
   };
 }
 
-function delimiterFor(data: string, extension: string): string {
+function delimiterFor(data: string, extension: string, comments: string | false): string {
   if (extension.toLowerCase() === "tsv") return "\t";
-  const sample = firstNonEmptyLines(data, 20).join("\n");
-  if (!sample) return ",";
 
-  return [",", ";", "|"].reduce((best, delimiter) =>
-    delimiterScore(sample, delimiter) > delimiterScore(sample, best) ? delimiter : best,
-  );
+  const scores = [",", ";", "|"].map((delimiter) => ({
+    delimiter,
+    score: delimiterScore(data, delimiter, comments),
+  }));
+  return scores.reduce((best, candidate) => candidate.score > best.score ? candidate : best).delimiter;
 }
 
-function delimiterScore(sample: string, delimiter: string): number {
-  const result = Papa.parse<string[]>(sample, {
-    delimiter,
-    dynamicTyping: false,
-    header: false,
-    preview: 20,
-    skipEmptyLines: "greedy",
-  });
-  const rows = normalizeRows(result.data);
-  if (rows.length === 0) return 0;
-
-  const widths = rows.map((row) => row.length);
+function delimiterScore(data: string, delimiter: string, comments: string | false): number {
   const frequencies = new Map<number, number>();
-  for (const width of widths) {
-    if (width > 1) frequencies.set(width, (frequencies.get(width) ?? 0) + 1);
-  }
+  let rowCount = 0;
+  let errorCount = 0;
+  Papa.parse<string[]>(data, {
+    delimiter,
+    comments,
+    dynamicTyping: false,
+    fastMode: false,
+    header: false,
+    skipEmptyLines: "greedy",
+    step: (result, parser) => {
+      const width = result.data.length;
+      if (width > 1) frequencies.set(width, (frequencies.get(width) ?? 0) + 1);
+      errorCount += result.errors.length;
+      rowCount += 1;
+      if (rowCount >= 20) parser.abort();
+    },
+  });
+  if (rowCount === 0) return 0;
+
   let score = 0;
   for (const [width, count] of frequencies) {
-    score = Math.max(score, (count / rows.length) * 100 + count * 3 + Math.min(width, 20));
+    score = Math.max(score, (count / rowCount) * 100 + count * 3 + Math.min(width, 20));
   }
-  return score - result.errors.length * 4;
+  return score - errorCount * 4;
 }
 
 function warningsFor(
@@ -140,16 +147,6 @@ function formatCell(cell: unknown): string {
 
 function maxColumnCount(rows: string[][]): number {
   return rows.reduce((max, row) => Math.max(max, row.length), 0);
-}
-
-function firstNonEmptyLines(data: string, limit: number): string[] {
-  const lines: string[] = [];
-  for (const line of data.split(/\r?\n/)) {
-    if (!line.trim()) continue;
-    lines.push(line);
-    if (lines.length >= limit) break;
-  }
-  return lines;
 }
 
 function delimiterKind(delimiter: string): DelimiterKind {
