@@ -13,7 +13,7 @@ const assertions = [
   [!/obsidian/i.test(manifest.description), "manifest description avoids product name"],
   [main.includes("registerExtensions(TABULAR_EXTENSIONS"), "extensions are registered"],
   [main.includes("type ViewMode = \"table\" | \"source\""), "table/source mode exists"],
-  [main.includes("renderTable(container, parsed, this.filterValue)"), "table view code path exists"],
+  [main.includes("renderTable(container, parsed, this.filterValue, this.firstRowIsHeader)"), "table view code path exists"],
   [main.includes("renderSource(container, this.data, parsed.delimiter)"), "source view code path exists"],
   [parser.includes("RENDER_ROW_LIMIT = 10000"), "render cap exists"],
   [parser.includes("Papa.parse"), "Papa Parse is used"],

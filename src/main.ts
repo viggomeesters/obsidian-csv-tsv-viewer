@@ -49,6 +49,8 @@ export default class CsvTsvViewerPlugin extends Plugin {
 class CsvTsvViewerView extends TextFileView {
   private mode: ViewMode = "table";
   private filterValue = "";
+  private firstRowIsHeader = false;
+  private ignoreComments = false;
 
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
@@ -99,7 +101,7 @@ class CsvTsvViewerView extends TextFileView {
       return;
     }
 
-    const parsed = parseTable(this.data, this.file.extension);
+    const parsed = parseTable(this.data, this.file.extension, this.ignoreComments);
     renderSummary(container, parsed);
     renderWarnings(container, parsed.warnings);
 
@@ -113,7 +115,7 @@ class CsvTsvViewerView extends TextFileView {
       return;
     }
 
-    renderTable(container, parsed, this.filterValue);
+    renderTable(container, parsed, this.filterValue, this.firstRowIsHeader);
   }
 
   private renderTitle(parent: HTMLElement): void {
@@ -165,9 +167,24 @@ class CsvTsvViewerView extends TextFileView {
       this.render();
     });
 
+    this.renderToggle(toolbar, "First row as headers", "firstRowIsHeader");
+    this.renderToggle(toolbar, "Ignore # comments", "ignoreComments");
+
     const refreshButton = createIconButton(toolbar, "refresh-cw", "Refresh file");
     refreshButton.addEventListener("click", () => {
       void this.reloadFile();
+    });
+  }
+
+  private renderToggle(parent: HTMLElement, label: string, setting: "firstRowIsHeader" | "ignoreComments"): void {
+    const button = createTextButton(parent, label);
+    button.dataset.setting = setting;
+    button.setAttribute("aria-pressed", String(this[setting]));
+    button.toggleClass("is-active", this[setting]);
+    button.addEventListener("click", () => {
+      this[setting] = !this[setting];
+      this.render();
+      this.contentEl.querySelector<HTMLButtonElement>(`[data-setting="${setting}"]`)?.focus();
     });
   }
 
@@ -236,18 +253,20 @@ function renderWarnings(parent: HTMLElement, warnings: WarningItem[]): void {
   }
 }
 
-function renderTable(parent: HTMLElement, parsed: ParsedTable, query: string): void {
+function renderTable(parent: HTMLElement, parsed: ParsedTable, query: string, firstRowIsHeader: boolean): void {
   if (parsed.renderedRows.length === 0) {
     renderMessage(parent, "No rows to display.");
     return;
   }
 
   const normalizedQuery = query.trim().toLowerCase();
+  const headers = firstRowIsHeader ? parsed.renderedRows[0] : undefined;
+  const dataRows = headers ? parsed.renderedRows.slice(1) : parsed.renderedRows;
   const rows = normalizedQuery
-    ? parsed.renderedRows.filter((row) => row.join(" ").toLowerCase().includes(normalizedQuery))
-    : parsed.renderedRows;
+    ? dataRows.filter((row) => row.join(" ").toLowerCase().includes(normalizedQuery))
+    : dataRows;
 
-  if (rows.length === 0) {
+  if (rows.length === 0 && normalizedQuery) {
     renderMessage(parent, "No rows match the current filter.");
     return;
   }
@@ -258,7 +277,7 @@ function renderTable(parent: HTMLElement, parsed: ParsedTable, query: string): v
   const headRow = head.createEl("tr");
   headRow.createEl("th", { cls: "csv-tsv-viewer__row-number", text: "#" });
   for (let column = 0; column < parsed.columnCount; column += 1) {
-    headRow.createEl("th", { text: `Column ${column + 1}` });
+    headRow.createEl("th", { text: headers?.[column] || `Column ${column + 1}`, attr: { scope: "col" } });
   }
 
   const body = table.createEl("tbody");

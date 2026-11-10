@@ -23,7 +23,7 @@ CSV TSV Viewer is a read-only plugin for browsing `.csv` and `.tsv` files as tab
 - Filters visible rows by searching across cells.
 - Shows sticky column headers and row numbers.
 - Displays row count, column count, delimiter, and render cap status.
-- Detects comma and semicolon CSV files.
+- Detects comma, semicolon, and pipe delimiters in CSV files.
 - Uses tab as the delimiter for TSV files.
 - Parses quoted fields, escaped quotes, and multiline fields with Papa Parse.
 - Reports parse warnings, uneven row lengths, byte order marks, and large-file render caps.
@@ -71,6 +71,8 @@ Use the toolbar to:
 
 - filter visible rows
 - switch between table and source views
+- use **First row as headers** to show the first parsed row as column labels
+- use **Ignore # comments** to exclude records beginning with `#` from the table and delimiter detection while keeping them in Source. Quoted values beginning with `#` remain data.
 - refresh the file after external changes
 
 ## Development
