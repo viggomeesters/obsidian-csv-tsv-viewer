@@ -1,6 +1,6 @@
 {
   "name": "obsidian-csv-tsv-viewer",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Read-only CSV and TSV table viewer.",
   "license": "MIT",
   "author": "Viggo Meesters",
@@ -16,7 +16,8 @@
   "scripts": {
     "build": "node esbuild.config.mjs production",
     "dev": "node esbuild.config.mjs",
-    "test": "node scripts/parser-test.mjs && node scripts/smoke-test.mjs"
+    "test": "node scripts/parser-test.mjs && node scripts/smoke-test.mjs",
+    "lint": "eslint ."
   },
   "dependencies": {
     "papaparse": "^5.5.3"
@@ -25,6 +26,8 @@
     "@types/node": "^24.10.1",
     "@types/papaparse": "^5.3.16",
     "esbuild": "^0.25.12",
+    "eslint": "9.39.4",
+    "eslint-plugin-obsidianmd": "0.6.0",
     "obsidian": "^1.8.7",
     "typescript": "^5.9.3"
   }
